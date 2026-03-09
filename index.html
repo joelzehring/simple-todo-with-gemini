@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated To-Do List</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; display: flex; justify-content: center; padding: 50px; background-color: #f4f7f6; }
+        .container { width: 380px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #333; text-align: center; }
+        .input-group { display: flex; gap: 8px; margin-bottom: 25px; }
+        input[type="text"] { flex-grow: 1; padding: 12px; border: 2px solid #eee; border-radius: 6px; outline: none; transition: border-color 0.2s; }
+        input[type="text"]:focus { border-color: #007bff; }
+        button#addBtn { padding: 12px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; }
+        button#addBtn:hover { background-color: #0069d9; }
+        
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { 
+            background: #fff; border-bottom: 1px solid #eee; padding: 15px; 
+            display: flex; align-items: center; gap: 12px; 
+            transition: all 0.3s ease;
+        }
+        li:hover { background-color: #fafafa; }
+        
+        /* The Checkbox Style */
+        input[type="checkbox"] { transform: scale(1.3); cursor: pointer; accent-color: #28a745; }
+        
+        /* The strike-through animation logic */
+        .task-text { flex-grow: 1; cursor: pointer; color: #333; position: relative; }
+        .completed { color: #aaa; text-decoration: line-through; transition: color 0.3s ease; }
+        
+        .delete { color: #dc3545; cursor: pointer; font-weight: bold; margin-left: auto; padding: 5px 10px; opacity: 0.5; }
+        .delete:hover { opacity: 1; background-color: #fee; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎯 My Focus List</h2>
+    <div class="input-group">
+        <input type="text" id="taskInput" placeholder="What's the next task?">
+        <button id="addBtn" onclick="addTask()">Add</button>
+    </div>
+    <ul id="taskList"></ul>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<script>
+    // Load tasks from localStorage on startup
+    document.addEventListener('DOMContentLoaded', getTasks);
+
+    function addTask() {
+        const input = document.getElementById('taskInput');
+        if (input.value.trim() === "") return;
+
+        const taskObj = { text: input.value, completed: false };
+        createTaskElement(taskObj);
+        saveLocalTask(taskObj);
+        input.value = "";
+    }
+
+    function createTaskElement(taskObj) {
+        const li = document.createElement('li');
+        
+        // Create Checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = taskObj.completed;
+        checkbox.onclick = () => toggleComplete(li, checkbox, taskObj.text);
+
+        // Create Text Span
+        const span = document.createElement('span');
+        span.className = 'task-text' + (taskObj.completed ? ' completed' : '');
+        span.innerText = taskObj.text;
+
+        // Create Delete Button
+        const delBtn = document.createElement('span');
+        delBtn.className = 'delete';
+        delBtn.innerHTML = '✕';
+        delBtn.onclick = () => {
+            removeLocalTask(taskObj.text);
+            li.remove();
+        };
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        li.appendChild(delBtn);
+        document.getElementById('taskList').appendChild(li);
+    }
+
+    function toggleComplete(li, checkbox, text) {
+        const span = li.querySelector('.task-text');
+        span.classList.toggle('completed');
+        
+        // If checking it COMPLETE, trigger confetti
+        if (checkbox.checked) {
+            triggerConfetti();
+        }
+
+        // Update localStorage status
+        let tasks = JSON.parse(localStorage.getItem('tasks'));
+        tasks = tasks.map(t => t.text === text ? { ...t, completed: !t.completed } : t);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // --- 2. The Confetti Animation Function ---
+    function triggerConfetti() {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }, // Slightly lower origin so it pops up
+            colors: ['#28a745', '#007bff', '#ffc107', '#dc3545', '#17a2b8'] // Green + bootstrap theme colors
+        });
+    }
+
+    // --- LocalStorage Helpers ---
+    function saveLocalTask(task) {
+        let tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+        tasks.push(task);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function getTasks() {
+        let tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+        tasks.forEach(task => createTaskElement(task));
+    }
+
+    function removeLocalTask(text) {
+        let tasks = JSON.parse(localStorage.getItem('tasks'));
+        tasks = tasks.filter(t => t.text !== text);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+</script>
+
+</body>
+</html>
