@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfectly Aligned To-Do</title>
+    <title>Editable To-Do List</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -30,19 +30,16 @@
             color: var(--text-color); display: flex; justify-content: center;
         }
 
-        /* Sidebar & Navigation */
+        /* Sidebar */
         .sidebar { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: var(--sidebar-bg); box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: left 0.3s ease; z-index: 1000; padding: 30px 20px; }
         .sidebar.active { left: 0; }
         .sidebar h2 { margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
-        
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
         .overlay.active { display: block; }
-        
         .menu-btn { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: var(--text-color); z-index: 10; padding: 10px; }
 
         /* Main Container */
         .container { width: 100%; max-width: 500px; background: var(--container-bg); padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin: 80px 15px 20px 15px; }
-
         .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
         .input-row { display: flex; gap: 8px; }
         
@@ -54,33 +51,23 @@
         
         button#addBtn { padding: 12px; cursor: pointer; background-color: var(--accent); color: white; border: none; border-radius: 6px; font-weight: bold; }
 
-        /* Task List */
+        /* Task Items */
         ul { list-style: none; padding: 0; margin: 0; }
         li { padding: 12px 5px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
         
-        .task-label { display: flex; align-items: center; gap: 12px; flex-grow: 1; cursor: pointer; overflow: hidden; }
-        
-        /* THE FIX: Flex column with center justification handles the vertical alignment */
-        .task-info { 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            flex-grow: 1; 
-            min-height: 24px; /* Matches checkbox height roughly */
-        }
-        
-        .task-text { font-weight: 500; word-wrap: break-word; line-height: 1.2; }
-        
-        /* THE FIX: Empty :empty selector hides the tag so it doesn't push the text up */
+        .task-info { display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-height: 24px; }
+        .task-text { font-weight: 500; word-wrap: break-word; line-height: 1.2; cursor: text; }
+        .due-tag { font-size: 0.75rem; color: #777; margin-top: 3px; cursor: pointer; width: fit-content; }
         .due-tag:empty { display: none; }
-        .due-tag { font-size: 0.75rem; color: #777; margin-top: 3px; }
-        
         .overdue { color: var(--overdue) !important; font-weight: bold; }
         
         .completed { text-decoration: line-through; opacity: 0.5; }
         .delete { color: var(--overdue); cursor: pointer; padding: 10px; font-weight: bold; flex-shrink: 0; }
         
-        input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: #28a745; flex-shrink: 0; margin: 0; }
+        input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: #28a745; flex-shrink: 0; }
+
+        /* Edit Mode Styles */
+        .edit-input { width: 100%; padding: 4px; font-size: 16px; border: 1px solid var(--accent); border-radius: 4px; background: var(--container-bg); color: var(--text-color); }
 
         .settings-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #888; margin-top: 30px; display: block; border-top: 1px solid var(--border); padding-top: 15px; }
     </style>
@@ -148,9 +135,9 @@
             completed: false
         };
 
-        let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        let tasks = getLocalTasks();
         tasks.push(taskObj);
-        localStorage.setItem('tasks', JSON.stringify(tasks));
+        saveLocalTasks(tasks);
         
         renderTasks();
         nameInput.value = "";
@@ -166,7 +153,7 @@
     function renderTasks() {
         const list = document.getElementById('taskList');
         list.innerHTML = "";
-        let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        let tasks = getLocalTasks();
 
         tasks.sort((a, b) => {
             if (!a.date) return 1;
@@ -180,41 +167,92 @@
             const li = document.createElement('li');
             const isOverdue = task.date && new Date(task.date) < today && !task.completed;
             const displayDate = formatTaskDate(task.date);
-            const checkId = `check-${task.id}`;
 
-            // Modified: Only insert text into .due-tag if displayDate exists
             li.innerHTML = `
-                <input type="checkbox" id="${checkId}" ${task.completed ? 'checked' : ''} onchange="toggleComplete(${task.id})">
-                <label for="${checkId}" class="task-label">
-                    <div class="task-info ${task.completed ? 'completed' : ''}">
-                        <span class="task-text">${task.text}</span>
-                        <span class="due-tag ${isOverdue ? 'overdue' : ''}">${displayDate ? 'Due: ' + displayDate : ''}</span>
-                    </div>
-                </label>
+                <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleComplete(${task.id})">
+                <div class="task-info ${task.completed ? 'completed' : ''}">
+                    <span class="task-text" onclick="editTaskText(${task.id}, this)">${task.text}</span>
+                    <span class="due-tag ${isOverdue ? 'overdue' : ''}" onclick="editTaskDate(${task.id}, this, '${task.date}')">
+                        ${displayDate ? 'Due: ' + displayDate : 'Add date'}
+                    </span>
+                </div>
                 <span class="delete" onclick="deleteTask(${task.id})">✕</span>
             `;
             list.appendChild(li);
         });
     }
 
+    // --- Editing Functions ---
+
+    function editTaskText(id, element) {
+        const currentText = element.innerText;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentText;
+        input.className = 'edit-input';
+        
+        element.replaceWith(input);
+        input.focus();
+
+        const save = () => {
+            const newText = input.value.trim() || currentText;
+            updateTaskProperty(id, 'text', newText);
+            renderTasks();
+        };
+
+        input.onblur = save;
+        input.onkeydown = (e) => { if(e.key === 'Enter') save(); };
+    }
+
+    function editTaskDate(id, element, currentDate) {
+        const input = document.createElement('input');
+        input.type = 'date';
+        input.value = currentDate;
+        input.className = 'edit-input';
+        
+        element.replaceWith(input);
+        input.focus();
+
+        const save = () => {
+            updateTaskProperty(id, 'date', input.value);
+            renderTasks();
+        };
+
+        input.onblur = save;
+        input.onkeydown = (e) => { if(e.key === 'Enter') save(); };
+    }
+
+    function updateTaskProperty(id, prop, value) {
+        let tasks = getLocalTasks();
+        const task = tasks.find(t => t.id === id);
+        if(task) task[prop] = value;
+        saveLocalTasks(tasks);
+    }
+
+    // --- Core Logic ---
+
     function toggleComplete(id) {
-        let tasks = JSON.parse(localStorage.getItem('tasks'));
+        let tasks = getLocalTasks();
         const task = tasks.find(t => t.id === id);
         if(!task) return;
-        
         task.completed = !task.completed;
-        if (task.completed) {
-            confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
-        }
-        localStorage.setItem('tasks', JSON.stringify(tasks));
+        if (task.completed) confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
+        saveLocalTasks(tasks);
         setTimeout(renderTasks, 10);
     }
 
     function deleteTask(id) {
-        let tasks = JSON.parse(localStorage.getItem('tasks'));
-        tasks = tasks.filter(t => t.id !== id);
-        localStorage.setItem('tasks', JSON.stringify(tasks));
+        let tasks = getLocalTasks().filter(t => t.id !== id);
+        saveLocalTasks(tasks);
         renderTasks();
+    }
+
+    function getLocalTasks() {
+        return JSON.parse(localStorage.getItem('tasks') || '[]');
+    }
+
+    function saveLocalTasks(tasks) {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
     }
 </script>
 
