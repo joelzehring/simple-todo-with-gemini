@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List with Sidebar</title>
+    <title>Minimalist Sidebar To-Do</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -11,6 +11,8 @@
             --text-color: #333333;
             --sidebar-bg: #ffffff;
             --border: #eeeeee;
+            --accent: #007bff;
+            --overdue: #dc3545;
         }
 
         body.dark-mode {
@@ -21,92 +23,54 @@
             --border: #333333;
         }
 
-        * { box-sizing: border-box; transition: background-color 0.3s; }
+        * { box-sizing: border-box; transition: background-color 0.2s, color 0.2s; }
 
         body { 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; 
-            background-color: var(--bg-color); 
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg-color); 
+            color: var(--text-color); display: flex; justify-content: center;
         }
 
-        /* --- Sidebar Styles --- */
-        .sidebar {
-            position: fixed;
-            left: -250px; /* Hidden by default */
-            top: 0;
-            width: 250px;
-            height: 100%;
-            background: var(--sidebar-bg);
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            transition: left 0.3s ease;
-            z-index: 1000;
-            padding: 20px;
-        }
-
+        /* Sidebar & Navigation */
+        .sidebar { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: var(--sidebar-bg); box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: left 0.3s ease; z-index: 1000; padding: 30px 20px; }
         .sidebar.active { left: 0; }
-
-        .overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            z-index: 999;
-        }
-
-        .overlay.active { display: block; }
-
-        .menu-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            color: var(--text-color);
-        }
-
-        .sidebar-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 30px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        /* --- Main UI --- */
-        .container { 
-            width: 100%; 
-            max-width: 500px; 
-            background: var(--container-bg); 
-            padding: 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            margin: 80px 15px 20px 15px;
-        }
-
-        .input-group { display: flex; gap: 8px; margin-bottom: 25px; }
-        input[type="text"] { 
-            flex-grow: 1; padding: 12px; border: 2px solid var(--border); 
-            border-radius: 6px; background: var(--container-bg); color: var(--text-color);
-        }
+        .sidebar h2 { margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
         
-        button#addBtn { 
-            padding: 12px 20px; cursor: pointer; background-color: #007bff; 
-            color: white; border: none; border-radius: 6px; font-weight: bold; 
-        }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+        .overlay.active { display: block; }
+        
+        .menu-btn { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: var(--text-color); z-index: 10; }
 
-        ul { list-style: none; padding: 0; }
-        li { 
-            padding: 15px 5px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 12px; 
+        /* Main Container */
+        .container { width: 100%; max-width: 500px; background: var(--container-bg); padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin: 70px 15px 20px 15px; }
+
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+        .input-row { display: flex; gap: 8px; }
+        
+        input[type="text"], input[type="date"] { 
+            padding: 12px; border: 2px solid var(--border); border-radius: 6px; 
+            background: var(--container-bg); color: var(--text-color); font-size: 14px; outline: none;
         }
-        .completed { color: #888; text-decoration: line-through; }
-        .delete { color: #dc3545; cursor: pointer; margin-left: auto; }
+        input[type="text"] { flex-grow: 1; }
+        input[type="text"]:focus { border-color: var(--accent); }
+        
+        button#addBtn { padding: 12px; cursor: pointer; background-color: var(--accent); color: white; border: none; border-radius: 6px; font-weight: bold; }
+
+        /* Task List */
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { padding: 12px 5px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        
+        .task-info { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+        .task-text { font-weight: 500; word-wrap: break-word; }
+        .due-tag { font-size: 0.75rem; color: #777; margin-top: 3px; min-height: 1rem; }
+        .overdue { color: var(--overdue) !important; font-weight: bold; }
+        
+        .completed { text-decoration: line-through; opacity: 0.5; }
+        .delete { color: var(--overdue); cursor: pointer; padding: 5px; font-weight: bold; opacity: 0.6; }
+        .delete:hover { opacity: 1; }
+        
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #28a745; flex-shrink: 0; }
+
+        .settings-label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #888; margin-top: 30px; display: block; border-top: 1px solid var(--border); padding-top: 15px; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -115,18 +79,25 @@
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
     
     <div class="sidebar" id="sidebar">
-        <h3>Settings</h3>
-        <div class="sidebar-item">
-            <span>Dark Mode</span>
-            <button onclick="toggleDarkMode()" id="themeBtn" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🌙</button>
+        <h2>📅 My Tasks</h2>
+        
+        <span class="settings-label">Preferences</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+            <span>Theme</span>
+            <button onclick="toggleTheme()" id="themeBtn" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🌙</button>
         </div>
+        
+        <span class="settings-label">About</span>
+        <p style="font-size: 0.85rem; color: #777; line-height: 1.4;">A simple, persistent to-do list with local storage and confetti celebrations.</p>
     </div>
 
     <div class="container">
-        <h2 style="text-align: center;">🎯 My Focus List</h2>
         <div class="input-group">
-            <input type="text" id="taskInput" placeholder="New task...">
-            <button id="addBtn" onclick="addTask()">Add</button>
+            <input type="text" id="taskInput" placeholder="What needs to be done?">
+            <div class="input-row">
+                <input type="date" id="dateInput" style="flex-grow: 1;">
+                <button id="addBtn" onclick="addTask()">Add</button>
+            </div>
         </div>
         <ul id="taskList"></ul>
     </div>
@@ -135,18 +106,17 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        getTasks();
+        renderTasks();
         checkTheme();
     });
 
-    // --- Sidebar Logic ---
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
     }
 
-    // --- Theme Logic ---
-    function toggleDarkMode() {
+    // --- Theme Logic updated to match your request ---
+    function toggleTheme() {
         const isDark = document.body.classList.toggle('dark-mode');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
@@ -159,64 +129,79 @@
         }
     }
 
-    // --- Task Logic ---
     function addTask() {
-        const input = document.getElementById('taskInput');
-        if (input.value.trim() === "") return;
-        const taskObj = { text: input.value, completed: false };
-        createTaskElement(taskObj);
-        saveLocalTask(taskObj);
-        input.value = "";
-    }
+        const nameInput = document.getElementById('taskInput');
+        const dateInput = document.getElementById('dateInput');
+        if (nameInput.value.trim() === "") return;
 
-    function createTaskElement(taskObj) {
-        const li = document.createElement('li');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = taskObj.completed;
-        checkbox.style.transform = "scale(1.3)";
-        checkbox.onclick = () => {
-            const span = li.querySelector('.task-text');
-            span.classList.toggle('completed');
-            if (checkbox.checked) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            updateLocalStatus(taskObj.text);
+        const taskObj = {
+            id: Date.now(),
+            text: nameInput.value,
+            date: dateInput.value,
+            completed: false
         };
 
-        const span = document.createElement('span');
-        span.className = 'task-text' + (taskObj.completed ? ' completed' : '');
-        span.innerText = taskObj.text;
-        span.style.flexGrow = "1";
-
-        const delBtn = document.createElement('span');
-        delBtn.innerHTML = '✕';
-        delBtn.className = 'delete';
-        delBtn.onclick = () => { removeLocalTask(taskObj.text); li.remove(); };
-
-        li.append(checkbox, span, delBtn);
-        document.getElementById('taskList').appendChild(li);
-    }
-
-    function saveLocalTask(task) {
         let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-        tasks.push(task);
+        tasks.push(taskObj);
         localStorage.setItem('tasks', JSON.stringify(tasks));
+        
+        renderTasks();
+        nameInput.value = "";
+        dateInput.value = "";
     }
 
-    function getTasks() {
+    function formatTaskDate(dateStr) {
+        if (!dateStr) return "";
+        const [year, month, day] = dateStr.split('-');
+        return `${month}/${day}/${year}`;
+    }
+
+    function renderTasks() {
+        const list = document.getElementById('taskList');
+        list.innerHTML = "";
         let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-        tasks.forEach(task => createTaskElement(task));
+
+        tasks.sort((a, b) => {
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return new Date(a.date) - new Date(b.date);
+        });
+
+        const today = new Date().setHours(0,0,0,0);
+
+        tasks.forEach(task => {
+            const li = document.createElement('li');
+            const isOverdue = task.date && new Date(task.date) < today && !task.completed;
+            const displayDate = formatTaskDate(task.date);
+
+            li.innerHTML = `
+                <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleComplete(${task.id})">
+                <div class="task-info ${task.completed ? 'completed' : ''}">
+                    <span class="task-text">${task.text}</span>
+                    <span class="due-tag ${isOverdue ? 'overdue' : ''}">
+                        ${displayDate ? 'Due: ' + displayDate : ''}
+                    </span>
+                </div>
+                <span class="delete" onclick="deleteTask(${task.id})">✕</span>
+            `;
+            list.appendChild(li);
+        });
     }
 
-    function updateLocalStatus(text) {
+    function toggleComplete(id) {
         let tasks = JSON.parse(localStorage.getItem('tasks'));
-        tasks = tasks.map(t => t.text === text ? { ...t, completed: !t.completed } : t);
+        const task = tasks.find(t => t.id === id);
+        task.completed = !task.completed;
+        if (task.completed) confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
         localStorage.setItem('tasks', JSON.stringify(tasks));
+        renderTasks();
     }
 
-    function removeLocalTask(text) {
+    function deleteTask(id) {
         let tasks = JSON.parse(localStorage.getItem('tasks'));
-        tasks = tasks.filter(t => t.text !== text);
+        tasks = tasks.filter(t => t.id !== id);
         localStorage.setItem('tasks', JSON.stringify(tasks));
+        renderTasks();
     }
 </script>
 
